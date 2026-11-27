@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collatz Lab</title>
+  <link rel="icon" href="favicon-16.png" sizes="16x16" type="image/png" />
+  <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="icon" href="favicon-48.png" sizes="48x48" type="image/png" />
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="CSS.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">3n+1</div>
+        <div>
+          <h1>Collatz Lab</h1>
+          <p class="subtitle">Interactive Hailstone Sequence &amp; Trajectory Explorer</p>
+        </div>
+      </div>
+      <nav class="header-nav" aria-label="Primary Navigation">
+        <a href="#dashboard">Explorer</a>
+        <a href="#graph-section">Trajectory Graph</a>
+        <a href="#sequence-section">Sequence</a>
+        <a href="#theory-section">Mathematical Theory</a>
+        <a href="#about-section">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-container" id="dashboard">
+    <!-- Input & Presets Section -->
+    <section class="card control-panel" aria-labelledby="input-heading">
+      <div class="control-top">
+        <div class="input-group">
+          <label for="number-input" id="input-heading">Starting Positive Integer ($n \in \mathbb{Z}^+$)</label>
+          <div class="input-row">
+            <input
+              type="text"
+              id="number-input"
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="Enter any positive integer (e.g., 27, 871, 989345275647)..."
+              value="27"
+              aria-describedby="input-feedback"
+            />
+            <button type="button" id="calculate-btn" class="btn btn-primary">
+              Calculate
+            </button>
+            <button type="button" id="reset-btn" class="btn btn-secondary">
+              Reset
+            </button>
+          </div>
+          <p id="input-feedback" class="feedback-message" role="alert" aria-live="polite"></p>
+        </div>
+
+        <div class="presets-group">
+          <span class="presets-label">Notable Test Cases:</span>
+          <div class="preset-buttons">
+            <button type="button" class="btn-chip" data-preset="1">1</button>
+            <button type="button" class="btn-chip" data-preset="2">2</button>
+            <button type="button" class="btn-chip" data-preset="7">7</button>
+            <button type="button" class="btn-chip" data-preset="27">27 (111 steps)</button>
+            <button type="button" class="btn-chip" data-preset="97">97</button>
+            <button type="button" class="btn-chip" data-preset="871">871</button>
+            <button type="button" class="btn-chip" data-preset="6171">6171</button>
+            <button type="button" class="btn-chip" data-preset="9007199254740993">BigInt (&gt;2⁵³)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Statistics Grid -->
+    <section class="stats-grid" aria-label="Sequence Statistics">
+      <article class="card stat-card">
+        <span class="stat-label">Starting Number (n₀)</span>
+        <strong class="stat-value mono" id="stat-start">—</strong>
+      </article>
+      <article class="card stat-card">
+        <span class="stat-label">Total Stopping Time (Steps)</span>
+        <strong class="stat-value mono accent-cyan" id="stat-steps">—</strong>
+      </article>
+      <article class="card stat-card">
+        <span class="stat-label">Maximum Peak Value</span>
+        <strong class="stat-value mono accent-orange" id="stat-max">—</strong>
+      </article>
+      <article class="card stat-card">
+        <span class="stat-label">Peak Iteration Index</span>
+        <strong class="stat-value mono" id="stat-max-iter">—</strong>
+      </article>
+      <article class="card stat-card">
+        <span class="stat-label">Terminal Value</span>
+        <strong class="stat-value mono accent-green" id="stat-final">—</strong>
+      </article>
+    </section>
+
+    <!-- Interactive Graph & Animation Studio -->
+    <section class="card graph-section" id="graph-section" aria-labelledby="graph-heading">
+      <div class="section-header">
+        <div>
+          <h2 id="graph-heading">Trajectory Visualization</h2>
+          <p class="section-desc" id="scale-notice">
+            Linear scale • Zoom and pan disabled
+          </p>
+        </div>
+
+        <div class="graph-tools">
+          <div class="legend-pills" aria-label="Graph Point Legend">
+            <span class="pill pill-start">Start</span>
+            <span class="pill pill-odd">Odd (3n+1)</span>
+            <span class="pill pill-even">Even (n/2)</span>
+            <span class="pill pill-end">End (1)</span>
+          </div>
+          <button type="button" id="scale-toggle-btn" class="btn btn-outline btn-sm" title="Switch between linear and logarithmic Y-axis">
+            Scale: Linear
+          </button>
+        </div>
+      </div>
+
+      <!-- Animation Bar -->
+      <div class="animation-bar" role="region" aria-label="Step-by-Step Animation Controls">
+        <div class="anim-buttons">
+          <button type="button" id="anim-play-btn" class="btn btn-primary btn-sm">
+            ▶ Play
+          </button>
+          <button type="button" id="anim-pause-btn" class="btn btn-secondary btn-sm" disabled>
+            ⏸ Pause
+          </button>
+          <button type="button" id="anim-reset-btn" class="btn btn-outline btn-sm">
+            ↺ Reset Anim
+          </button>
+        </div>
+
+        <div class="anim-speed">
+          <label for="speed-slider">Speed:</label>
+          <input type="range" id="speed-slider" min="1" max="100" value="65" />
+          <span id="speed-label" class="mono">60 ms/step</span>
+        </div>
+
+        <div class="anim-status mono" id="anim-status">
+          Ready • Full trajectory displayed
+        </div>
+      </div>
+
+      <!-- Chart Canvas Container -->
+      <div class="chart-wrapper">
+        <canvas id="collatz-chart" aria-label="Collatz Conjecture Trajectory Chart"></canvas>
+      </div>
+    </section>
+
+    <!-- Complete Sequence Display -->
+    <section class="card sequence-section" id="sequence-section" aria-labelledby="sequence-heading">
+      <div class="section-header">
+        <div>
+          <h2 id="sequence-heading">Complete Hailstone Sequence</h2>
+          <p class="section-desc" id="sequence-meta">Showing all terms from n₀ to 1</p>
+        </div>
+        <div class="sequence-actions">
+          <button type="button" id="copy-seq-btn" class="btn btn-outline btn-sm">
+            Copy Sequence
+          </button>
+        </div>
+      </div>
+
+      <div class="sequence-container" id="sequence-list" tabindex="0" role="list" aria-label="Collatz sequence values">
+        <!-- Tokens injected dynamically -->
+      </div>
+    </section>
+
+    <!-- Mathematical Theory & Disclaimer -->
+    <section class="card theory-section" id="theory-section" aria-labelledby="theory-heading">
+      <div class="theory-grid">
+        <div>
+          <h2 id="theory-heading">What is the Collatz Conjecture?</h2>
+          <p>
+            Proposed by German mathematician <strong>Lothar Collatz</strong> in 1937, the Collatz Conjecture (also known as the <em>3n + 1 problem</em> or <em>hailstone sequence</em>) examines a simple iterative function defined on positive integers:
+          </p>
+          <div class="formula-box mono">
+            <div>f(n) = n / 2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if n ≡ 0 (mod 2) [Even]</div>
+            <div>f(n) = 3n + 1 &nbsp;&nbsp;&nbsp;&nbsp;if n ≡ 1 (mod 2) [Odd]</div>
+          </div>
+          <p>
+            The conjecture asserts that regardless of which positive integer <strong>n</strong> you start with, repeatedly applying this rule will always eventually reach the number <strong>1</strong> (entering the trivial cycle 1 → 4 → 2 → 1).
+          </p>
+        </div>
+
+        <div class="theory-sidebar">
+          <h3>Precision &amp; Scaling Architecture</h3>
+          <p>
+            Collatz Lab performs all arithmetic using native arbitrary-precision <code>BigInt</code> integers, eliminating IEEE-754 floating-point rounding errors. When trajectories exceed JavaScript's <code>Number.MAX_SAFE_INTEGER</code> (2<sup>53</sup> − 1), chart coordinates automatically apply logarithmic/scaled projection while preserving exact <code>BigInt</code> strings in tooltips and sequence cards.
+          </p>
+          <blockquote class="disclaimer-box">
+            <strong>Mathematical Status Disclaimer:</strong><br />
+            The Collatz Conjecture remains an unsolved mathematical problem. Testing individual numbers, even extremely large ones, does not constitute a mathematical proof.
+          </blockquote>
+        </div>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section class="card about-section" id="about-section" aria-labelledby="about-heading">
+      <h2 id="about-heading">About</h2>
+      <p>Developed by me with AI-assisted coding, using HTML, CSS, and JavaScript. I directed the design, evaluated the implementation, and tested the Collatz visualization.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Collatz Lab • Client-Side Arbitrary-Precision Mathematical Explorer</p>
+  </footer>
+
+  <script src="JavaScript.js"></script>
+</body>
+</html>
